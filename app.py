@@ -2,7 +2,7 @@ import io, re, json
 from pathlib import Path
 
 import streamlit as st
-import fitz  # PyMuPDF
+import pymupdf as fitz
 import cv2
 import numpy as np
 from PIL import Image
