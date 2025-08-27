@@ -66,9 +66,8 @@ if uploaded:
         st.error("❌ EasyOCR se nepodařilo inicializovat s lokálními modely.")
         st.write("Zkontrolujte, že existují tyto soubory:")
         st.code(
-            "model/easyocr/detection/craft_mlt_25k.pth\n"
-            "model/easyocr/recognition/latin_g2.pth\n"
-            "(volitelně) model/easyocr/recognition/english_g2.pth"
+            "craft_mlt_25k.pth\n"
+            "latin_g2.pth\n"
         )
         st.exception(e)
         st.stop()
