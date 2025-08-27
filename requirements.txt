@@ -1,7 +1,8 @@
-streamlit==1.48.1
-PyMuPDF==1.25.5         # provides the "fitz" module
-pillow==11.2.1
-numpy==2.0.2
-pandas==2.3.2
-opencv-python-headless==4.11.0.86
-pytesseract==0.3.13
+streamlit
+easyocr
+pdf2image
+pillow
+numpy
+pandas
+transformers
+torch
