@@ -10,7 +10,7 @@ import pandas as pd
 
 # ===== UI & config =====
 st.set_page_config(page_title="OCR skenovaného PDF", layout="wide")
-st.title("📄 OCR skenovaného PDF (čeština)")
+st.title("📄 OCR skenovaného PDF)")
 st.markdown(
     "Nahrajte **skenované PDF**. Každá stránka se vykreslí jako obrázek, "
     "proběhne **OCR v češtině**, extrahují se základní údaje a laboratorní testy. "
@@ -28,7 +28,7 @@ def pdf_to_images_from_bytes(file_bytes: bytes, dpi_val: int = 300) -> List[Imag
     """Render PDF na seznam PIL obrázků přes pdf2image (vyžaduje Poppler)."""
     return convert_from_bytes(file_bytes, dpi=dpi_val)
 
-@st.cache_data(show_spinner=False)
+#@st.cache_data(show_spinner=False)
 def ocr_image(img: Image.Image, lang_code: str) -> str:
     """OCR přes Tesseract."""
     return pytesseract.image_to_string(img, lang=lang_code)
