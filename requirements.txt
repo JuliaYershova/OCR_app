@@ -1,8 +1,12 @@
 streamlit
 easyocr
-pdf2image
+pypdfium2
 pillow
 numpy
 pandas
 transformers
 torch
+torchvision
+sentencepiece
+safetensors
+accelerate
