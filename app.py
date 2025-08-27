@@ -186,7 +186,7 @@ if uploaded_file:
 
     for i, page_img in enumerate(pages, start=1):
         st.markdown(f"## Stránka {i}")
-        st.image(page_img, caption=f"Stránka {i}", use_column_width=True)
+        st.image(page_img, caption=f"Stránka {i}", use_container_width=True)
 
         with st.spinner(f"OCR stránka {i}/{len(pages)}…"):
             text = ocr_image(page_img, lang_code=lang)
