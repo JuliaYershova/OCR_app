@@ -19,7 +19,7 @@ with col2:
 uploaded = st.file_uploader("Nahrajte skenované PDF", type=["pdf"])
 
 # ---------- Local EasyOCR models ----------
-MODEL_DIR = "model/easyocr"  # <- your committed weights
+MODEL_DIR = ""  # <- your committed weights
 
 @st.cache_resource
 def load_reader(model_dir: str):
