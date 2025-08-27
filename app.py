@@ -59,7 +59,7 @@ def extract_id_fields(text: str) -> Dict[str, Optional[str]]:
         #re.compile(r"RČ[:\s]*([0-9]{2,6}\s*/?\s*[0-9]{3,4})", re.IGNORECASE),
     ]
     adresa_patterns = [
-        re.compile(r"Adresa[:]*([^\n]+)", re.IGNORECASE),
+        re.compile(r"Adresa:*([^\n]+)", re.IGNORECASE),
         #re.compile(r"Bydliště[:\s]*([^\n]+)", re.IGNORECASE),
     ]
     mudr_patterns = [
