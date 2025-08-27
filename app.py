@@ -60,7 +60,7 @@ def extract_id_fields(text: str) -> Dict[str, Optional[str]]:
     ]
     adresa_patterns = [
         re.compile(r"Adresa[:\s]*([^\n]+)", re.IGNORECASE),
-        re.compile(r"Bydliště[:\s]*([^\n]+)", re.IGNORECASE),
+        #re.compile(r"Bydliště[:\s]*([^\n]+)", re.IGNORECASE),
     ]
     mudr_patterns = [
         re.compile(r"(?:MUDr\.?|MUDR\.?)\s*([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][^\n,]+)"),
