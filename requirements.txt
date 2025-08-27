@@ -1,4 +1,5 @@
 streamlit
 pytesseract
+pillow
 pdf2image
-Pillow
+pandas
