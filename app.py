@@ -9,7 +9,7 @@ import pandas as pd
 
 
 # ===== UI & config =====
-st.set_page_config(page_title="OCR skenovaného PDF (čeština)", layout="wide")
+st.set_page_config(page_title="OCR skenovaného PDF", layout="wide")
 st.title("📄 OCR skenovaného PDF (čeština)")
 st.markdown(
     "Nahrajte **skenované PDF**. Každá stránka se vykreslí jako obrázek, "
