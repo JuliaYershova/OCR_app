@@ -12,13 +12,14 @@ import pandas as pd
 st.set_page_config(page_title="OCR skenovaného PDF", layout="wide")
 st.title("📄 OCR skenovaného PDF)")
 st.markdown(
-    "Nahrajte **skenované PDF**. Každá stránka se vykreslí jako obrázek, "
-    "proběhne **OCR v češtině**, extrahují se základní údaje a laboratorní testy. "
-    "Surový text je skrytý – otevřete přes *„Zobrazit surový text (OCR)“*."
+    "Nahrajte **skenované PDF**. Každá stránka se vykreslí jako obrázek a "
+    "proběhne **OCR v češtině**. Surový text uvidíte u každé stránky. "
+    "**Extrakce identifikačních údajů a laboratorních testů** se provádí "
+    "na konci z **kompletního textu celého dokumentu**."
 )
 
 uploaded_file = st.file_uploader("Nahrajte PDF", type=["pdf"])
-lang = 'ces'
+lang = "ces"
 dpi = st.slider("Render DPI (vyšší = ostřejší OCR, ale pomalejší)", 150, 400, 300, 50)
 
 
@@ -28,9 +29,8 @@ def pdf_to_images_from_bytes(file_bytes: bytes, dpi_val: int = 300) -> List[Imag
     """Render PDF na seznam PIL obrázků přes pdf2image (vyžaduje Poppler)."""
     return convert_from_bytes(file_bytes, dpi=dpi_val)
 
-#@st.cache_data(show_spinner=False)
 def ocr_image(img: Image.Image, lang_code: str) -> str:
-    """OCR přes Tesseract."""
+    """OCR přes Tesseract (bez cache kvůli nehashovatelným objektům)."""
     return pytesseract.image_to_string(img, lang=lang_code)
 
 def _find_first(patterns: List[re.Pattern], text: str) -> Optional[str]:
@@ -46,17 +46,17 @@ def extract_id_fields(text: str) -> Dict[str, Optional[str]]:
 
     jmeno_pats = [
         re.compile(r"Jméno\s*pacienta[:\s]*([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][^\n,]+)", re.IGNORECASE),
-        re.compile(r"Pacient(?:ka)?[:\s]*([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][^\n,]+)", re.IGNORECASE),
-        re.compile(r"Jméno[:\s]*([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][^\n,]+)", re.IGNORECASE),
+        #re.compile(r"Pacient(?:ka)?[:\s]*([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][^\n,]+)", re.IGNORECASE),
+        #re.compile(r"Jméno[:\s]*([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][^\n,]+)", re.IGNORECASE),
     ]
     zdr_poj = [
         re.compile(r"Zdravotní\s+pojišťovna[:\s]*([^\n,]+)", re.IGNORECASE),
-        re.compile(r"ZP[:\s]*([^\n,]+)", re.IGNORECASE),
-        re.compile(r"Pojišťovna[:\s]*([^\n,]+)", re.IGNORECASE),
+        #re.compile(r"ZP[:\s]*([^\n,]+)", re.IGNORECASE),
+        #re.compile(r"Pojišťovna[:\s]*([^\n,]+)", re.IGNORECASE),
     ]
     rc_patterns = [
         re.compile(r"Rodné\s*číslo[:\s]*([0-9]{2,6}\s*/?\s*[0-9]{3,4})", re.IGNORECASE),
-        re.compile(r"RČ[:\s]*([0-9]{2,6}\s*/?\s*[0-9]{3,4})", re.IGNORECASE),
+        #re.compile(r"RČ[:\s]*([0-9]{2,6}\s*/?\s*[0-9]{3,4})", re.IGNORECASE),
     ]
     adresa_patterns = [
         re.compile(r"Adresa[:\s]*([^\n]+)", re.IGNORECASE),
@@ -174,15 +174,9 @@ if uploaded_file:
     with st.spinner("Vykresluji stránky PDF…"):
         pages = pdf_to_images_from_bytes(file_bytes, dpi_val=dpi)
 
-    vsechny_texty = []
-    vsechny_laby = []
-    kum_meta = {
-        "Jméno pacienta": None,
-        "Zdravotní pojišťovna": None,
-        "Rodné číslo": None,
-        "Adresa": None,
-        "Doktor (MUDr.)": None,
-    }
+    vsechny_texty = []           # [(index_strany, text)]
+    vsechny_texty_only = []      # [text_bez_hlavicek] pro join
+    vsechny_laby_per_page = []   # případně pro debug
 
     for i, page_img in enumerate(pages, start=1):
         st.markdown(f"## Stránka {i}")
@@ -190,71 +184,53 @@ if uploaded_file:
 
         with st.spinner(f"OCR stránka {i}/{len(pages)}…"):
             text = ocr_image(page_img, lang_code=lang)
+
+        # uložení textu
         vsechny_texty.append((i, text))
+        vsechny_texty_only.append(text)
 
-        # Meta z této stránky
-        meta = extract_id_fields(text)
-        for k, v in meta.items():
-            if v and not kum_meta.get(k):
-                kum_meta[k] = v
-
-        st.markdown("**Detekované údaje (tato stránka):**")
-        c1, c2 = st.columns(2)
-        with c1:
-            st.write(f"**Jméno pacienta:** {meta.get('Jméno pacienta') or '—'}")
-            st.write(f"**Zdravotní pojišťovna:** {meta.get('Zdravotní pojišťovna') or '—'}")
-            st.write(f"**Rodné číslo:** {meta.get('Rodné číslo') or '—'}")
-        with c2:
-            st.write(f"**Adresa:** {meta.get('Adresa') or '—'}")
-            st.write(f"**Doktor (MUDr.):** {meta.get('Doktor (MUDr.)') or '—'}")
-
-        # Lab tabulka z této stránky
-        df_labs = parse_labs(text)
-        if not df_labs.empty:
-            st.markdown("**Laboratorní nálezy (parsováno):**")
-            st.dataframe(df_labs, use_container_width=True)
-            vsechny_laby.append(df_labs)
-            st.download_button(
-                f"⬇️ Stáhnout CSV (Stránka {i})",
-                data=df_labs.to_csv(index=False).encode("utf-8-sig"),
-                file_name=f"lab_stranka_{i}.csv",
-                mime="text/csv",
-            )
-        else:
-            st.info("Na této stránce se nepodařilo bezpečně rozpoznat standardní laboratorní řádky.")
-
-        # Surový text (schovaný do kliknutí)
+        # zobraz jen surový text této stránky (na přání)
         with st.expander("Zobrazit surový text (OCR)"):
             st.text_area("Text", text, height=220)
 
         st.divider()
 
-    # Shrnutí meta
-    st.markdown("## Shrnutí identifikačních údajů (první nalezené v dokumentu)")
-    cc1, cc2 = st.columns(2)
-    with cc1:
-        st.write(f"**Jméno pacienta:** {kum_meta.get('Jméno pacienta') or '—'}")
-        st.write(f"**Zdravotní pojišťovna:** {kum_meta.get('Zdravotní pojišťovna') or '—'}")
-        st.write(f"**Rodné číslo:** {kum_meta.get('Rodné číslo') or '—'}")
-    with cc2:
-        st.write(f"**Adresa:** {kum_meta.get('Adresa') or '—'}")
-        st.write(f"**Doktor (MUDr.):** {kum_meta.get('Doktor (MUDr.)') or '—'}")
+    # ===== EXTRAKCE NA KONCI Z CELÉHO TEXTU =====
+    st.markdown("## Extrakce z celého dokumentu")
 
-    # Stažení kompletního textu
-    full_text = "\n\n".join([f"--- Stránka {i} ---\n{t.strip()}" for i, t in vsechny_texty])
-    st.download_button("⬇️ Stáhnout veškerý OCR text", full_text, file_name="ocr_text.txt")
+    full_text = "\n\n".join(vsechny_texty_only)
 
-    # Sloučené laby
-    if vsechny_laby:
-        df_all = pd.concat(vsechny_laby, ignore_index=True)
-        st.markdown("## Všechny laboratorní nálezy (sloučeno)")
-        st.dataframe(df_all, use_container_width=True)
+    # 1) Identifikační údaje (celý dokument)
+    st.markdown("### Identifikační údaje")
+    meta_all = extract_id_fields(full_text)
+    c1, c2 = st.columns(2)
+    with c1:
+        st.write(f"**Jméno pacienta:** {meta_all.get('Jméno pacienta') or '—'}")
+        st.write(f"**Zdravotní pojišťovna:** {meta_all.get('Zdravotní pojišťovna') or '—'}")
+        st.write(f"**Rodné číslo:** {meta_all.get('Rodné číslo') or '—'}")
+    with c2:
+        st.write(f"**Adresa:** {meta_all.get('Adresa') or '—'}")
+        st.write(f"**Doktor (MUDr.):** {meta_all.get('Doktor (MUDr.)') or '—'}")
+
+    # 2) Laboratorní nálezy (celý dokument)
+    st.markdown("### Laboratorní nálezy")
+    df_all_labs = parse_labs(full_text)
+    if not df_all_labs.empty:
+        st.dataframe(df_all_labs, use_container_width=True)
         st.download_button(
             "⬇️ Stáhnout všechny laby (CSV)",
-            df_all.to_csv(index=False).encode("utf-8-sig"),
+            df_all_labs.to_csv(index=False).encode("utf-8-sig"),
             file_name="lab_vsechny.csv",
             mime="text/csv",
         )
+    else:
+        st.info("V celém dokumentu se nepodařilo bezpečně rozpoznat standardní laboratorní řádky.")
+
+    # 3) Stažení kompletního OCR textu (pro audit/debug)
+    full_text_with_headers = "\n\n".join(
+        [f"--- Stránka {i} ---\n{t.strip()}" for i, t in vsechny_texty]
+    )
+    st.download_button("⬇️ Stáhnout veškerý OCR text", full_text_with_headers, file_name="ocr_text.txt")
 
     # Diagnostika Tesseractu
     with st.expander("Diagnostika"):
