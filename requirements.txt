@@ -1,8 +1,6 @@
 streamlit
-easyocr
+easyocr==1.7.1
 pypdfium2
 pillow
 numpy
-pandas
-rapidfuzz
-unidecode
+opencv-python-headless
